@@ -133,7 +133,7 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
             title: const Text('Добавить участника'),
             content: SizedBox(
               width: 400,
-              height: 500, // фиксируем высоту, чтобы список мог скроллиться
+              height: 500,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -155,9 +155,9 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
                       child: Text('Пользователи не найдены'),
                     )
                   else
-                    Expanded( // займёт всё оставшееся место
+                    Expanded(
                       child: ListView.builder(
-                        shrinkWrap: false, // false, потому что Expanded управляет размером
+                        shrinkWrap: false,
                         itemCount: searchResults.length,
                         itemBuilder: (context, index) {
                           final user = searchResults[index];

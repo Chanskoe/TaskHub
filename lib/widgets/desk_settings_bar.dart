@@ -95,7 +95,6 @@ class DeskSettingsBar extends StatelessWidget {
     );
   }
 
-  // === ДЕСКТОПНАЯ ВЕРСИЯ (Оригинальный код) ===
   Widget _buildDesktopBar(BuildContext context, List<String> views) {
     final bool isSettingsSelected = selectedView == 'Настройки';
 

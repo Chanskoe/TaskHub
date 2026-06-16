@@ -197,7 +197,7 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Верхняя панель
+            // верхняя панель
             Padding(
               padding: const EdgeInsets.only(left: 20, right: 12, top: 12),
               child: Row(
@@ -236,7 +236,7 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                   children: [
                     const Padding(padding: EdgeInsets.only(top: 15)),
                     
-                    // Название задачи
+                    // название задачи
                     TextField(
                       controller: _titleController,
                       focusNode: _titleFocusNode,
@@ -248,7 +248,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Иконки действий
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -298,7 +297,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Описание задачи
                     TextField(
                       controller: _descriptionController,
                       focusNode: _descriptionFocusNode,
@@ -312,7 +310,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                     const Divider(color: AppColors.olive, thickness: 1, height: 1),
                     const SizedBox(height: 16),
 
-                    // Характеристики
                     _buildPropertyRow(
                       'Дата', 
                       InkWell(
@@ -374,7 +371,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                     const Divider(color: AppColors.olive, thickness: 1, height: 1),
                     const SizedBox(height: 24),
 
-                    // Комментарии
                     TextField(
                       controller: _commentController,
                       style: const TextStyle(fontSize: AppSizes.body, color: AppColors.darkBlue, fontWeight: AppWeight.lightFontWeight),
@@ -407,7 +403,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Список комментариев
                     ...widget.task.comments.map((comment) => Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: TaskCommentWidget(

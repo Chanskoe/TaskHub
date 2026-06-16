@@ -5,7 +5,7 @@ import '../services/api_service.dart';
 
 class RegistrationForm extends StatefulWidget {
   final ValueChanged<String> onSuccessAuth;
-  final VoidCallback onSwitchToLogin; // Для переключения на форму входа
+  final VoidCallback onSwitchToLogin;
 
   const RegistrationForm({
     super.key, 
@@ -35,7 +35,6 @@ class _RegistrationFormState extends State<RegistrationForm> {
     super.dispose();
   }
 
-  // Встроенная строгая валидация полей
   String? _validateForm(String name, String email, String password, String confirm) {
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       return 'Заполните все обязательные поля!';
@@ -114,9 +113,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
                         setState(() => _isLoading = true);
                         try {
-                          // 1. Регистрируем
                           await _apiService.register(name, email, password);
-                          // 2. Сразу автоматически логиним после успешной регистрации
                           final loginRes = await _apiService.login(email, password);
                           
                           if (loginRes['status'] == 'success') {

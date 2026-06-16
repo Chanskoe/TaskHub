@@ -103,8 +103,8 @@ class _AppSidebarState extends State<AppSidebar> {
             
             const SizedBox(height: 24),
             
-            // Заголовок "Задачи" (без плюсика, как ты и просила)
             _buildSidebarHeader('Задачи'),
+            // TODO: плюсик вернуть
             _buildSidebarItem('Сегодня', false),
             _buildSidebarItem('Завтра', false),
             _buildSidebarItem('Неделя', false),

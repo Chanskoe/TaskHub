@@ -286,7 +286,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final String activeViewName = _currentBoardName != null ? _selectedView : _selectedSidebarItem;
     return Center(
-      child: Text('Как вы сюда попали..?', style: const TextStyle(fontSize: 18)),
+      child: Text('Как вы сюда попали..?', style: const TextStyle(fontSize: AppSizes.body)),
     );
   }
 
@@ -302,7 +302,6 @@ class _TaskScreenState extends State<TaskScreen> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
 
-    // На мобильных устройствах, если выбрана задача, показываем только панель редактирования на весь экран
     if (isMobile && _selectedTask != null) {
       return Scaffold(
         backgroundColor: AppColors.screenBackground,
@@ -329,7 +328,6 @@ class _TaskScreenState extends State<TaskScreen> {
       );
     }
 
-    // Обычный режим (десктоп/планшет или мобильный без выбранной задачи)
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
       drawer: isMobile

@@ -90,7 +90,6 @@ class _LoginFormState extends State<LoginForm> {
                         try {
                           final response = await _apiService.login(email, password);
                           if (response['status'] == 'success') {
-                            // Записываем сессию пользователя глобально
                             AuthProvider().authenticate(response['user']);
                             final String uuid = response['user']['id']?.toString() ?? '';
                             widget.onSuccessAuth(uuid);

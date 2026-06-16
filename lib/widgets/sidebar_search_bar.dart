@@ -31,11 +31,8 @@ class SidebarSearchBar extends StatelessWidget {
             fontWeight: AppWeight.extraLightFontWeight,
           ),
           border: InputBorder.none,
-          
-          // ЭТИ СТРОКИ УБИРАЮТ ЛИШНЮЮ ВЫСОТУ:
-          isDense: true, // Делает поле компактным
-          contentPadding: EdgeInsets.symmetric(vertical: 4), // Схлопывает дефолтные 12-16px до минимума
-          
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(vertical: 4),
           icon: Icon(Icons.search, size: 15, color: AppColors.darkGray),
         ),
       ),

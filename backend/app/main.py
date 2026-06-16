@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import engine, Base, async_session
+from app.database import engine, Base
 from app.routers import auth, websocket
 
 from app.models.user import User

@@ -60,7 +60,6 @@ class _KanbanViewState extends State<KanbanView> {
       return KanbanColumnData(id: colId, title: colTitle, tasks: columnTasks);
     }).toList();
     
-    // Сортировка колонок по order (если бэкенд возвращает не по порядку)
     _columns.sort((a, b) {
       final aOrder = widget.rawColumns.firstWhere((c) => c['id'] == a.id)['order'] ?? 0;
       final bOrder = widget.rawColumns.firstWhere((c) => c['id'] == b.id)['order'] ?? 0;
@@ -118,7 +117,7 @@ class _KanbanViewState extends State<KanbanView> {
   }
 
   Future<void> _showAddTaskDialog(int columnIndex) async {
-    final columnId = _columns[columnIndex].id; // Берем ID вместо названия
+    final columnId = _columns[columnIndex].id;
     final columnTitle = _columns[columnIndex].title;
     if (columnId == null) return;
 
@@ -166,11 +165,10 @@ class _KanbanViewState extends State<KanbanView> {
         ),
       ).then((taskTitle) {
         if (taskTitle is String && taskTitle.isNotEmpty) {
-          _createNewTask(columnId, taskTitle, columnTitle); // Передаем ID
+          _createNewTask(columnId, taskTitle, columnTitle);
         }
       });
     } else if (result['type'] == 'existing') {
-      // Ищем задачи без привязки к колонке (kanbanColumnId == null)
       final tasksWithoutColumn = widget.allDeskTasks.where((t) => t.kanbanColumnId == null).toList();
       
       if (tasksWithoutColumn.isEmpty) {
@@ -197,7 +195,7 @@ class _KanbanViewState extends State<KanbanView> {
         ),
       );
       if (selectedTask != null) {
-        _assignTaskToColumn(selectedTask.id, columnId); // Передаем ID
+        _assignTaskToColumn(selectedTask.id, columnId);
       }
     }
   }

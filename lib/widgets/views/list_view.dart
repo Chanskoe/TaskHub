@@ -21,7 +21,6 @@ class TaskListView extends StatefulWidget {
 }
 
 class _TaskListViewState extends State<TaskListView> {
-  // Фиксированные ширины колонок для таблицы
   static const double _colWidthCheckbox = 46;
   static const double _colWidthTitle = 300;
   static const double _colWidthDate = 180;
@@ -58,10 +57,8 @@ class _TaskListViewState extends State<TaskListView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Шапка таблицы
               _buildHeaderRow(),
               
-              // Тело таблицы
               Expanded(
                 child: ListView(
                   scrollDirection: Axis.vertical,
@@ -70,7 +67,6 @@ class _TaskListViewState extends State<TaskListView> {
                   children: [
                     ...activeTasks.map((task) => _buildTaskRow(task)),
                     
-                    // ИСПРАВЛЕНИЕ 4: Возвращаем обычную тонкую полоску между секциями
                     if (activeTasks.isNotEmpty && completedTasks.isNotEmpty)
                       _buildSectionDivider(),
                     
@@ -116,7 +112,6 @@ class _TaskListViewState extends State<TaskListView> {
     );
   }
 
-  // --- Компонент: Строка таблицы (Задача) ---
   Widget _buildTaskRow(TaskModel task) {
     return InkWell(
       onTap: () => widget.onTaskTap(task),
@@ -127,7 +122,6 @@ class _TaskListViewState extends State<TaskListView> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // ИСПРАВЛЕНИЕ 2: Интегрировали новый виджет чекбокса с ховером
             SizedBox(
               width: _colWidthCheckbox,
               child: Align(
@@ -140,7 +134,6 @@ class _TaskListViewState extends State<TaskListView> {
               ),
             ),
             
-            // Название задачи
             _buildCell(
               _colWidthTitle,
               Text(
@@ -156,7 +149,6 @@ class _TaskListViewState extends State<TaskListView> {
               ),
             ),
 
-            // Остальные ячейки данных
             _buildCell(
               _colWidthDate, 
               _buildTextOrPlaceholder(
@@ -173,19 +165,16 @@ class _TaskListViewState extends State<TaskListView> {
               )
             ),
             
-            // Сложность с кружочком
             _buildCell(
               _colWidthComplexity, 
               _buildDifficultyCell(task.difficulty)
             ),
 
-            // Важность с кружочком
             _buildCell(
               _colWidthImportance, 
               _buildImportanceCell(task.importance)
             ),
             
-            // Исполнители (реальные)
             _buildCell(
               _colWidthAssignee, 
               _buildAssigneesCell(task.idOfMembers)
@@ -195,8 +184,6 @@ class _TaskListViewState extends State<TaskListView> {
       ),
     );
   }
-
-  // --- Вспомогательные элементы ячеек ---
 
   Widget _buildCell(double width, Widget child) {
     return SizedBox(
@@ -285,7 +272,6 @@ class _TaskListViewState extends State<TaskListView> {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 
-  // Обычная тонкая полоска-разделитель между выполненными и невыполненными задачами
   Widget _buildSectionDivider() {
     return Container(
       height: 1,
@@ -386,8 +372,7 @@ class _TaskListViewState extends State<TaskListView> {
       return _buildTextOrPlaceholder(null);
     }
     
-    // TODO: нужно получать имена пользователей по их ID
-    // Пока показываем количество исполнителей
+    // TODO: потом вывести имя первого исполнителя и дописать "и др."
     final count = memberIds.length;
     return Text(
       '$count ${_getMembersText(count)}',
