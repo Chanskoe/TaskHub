@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -32,6 +32,32 @@ def get_current_week_days() -> List[tuple]:
         day_title = f"{days_ru[day_date.weekday()]}, {day_date.strftime('%d.%m')}"
         week_structure.append((day_title, day_date.date()))
     return week_structure
+
+async def get_desk_users(desk_id: str, db: AsyncSession) -> List[str]:
+    from app.models.associations import desk_members
+
+    desk = await db.execute(select(Desk).where(Desk.id == desk_id))
+    desk_obj = desk.scalar_one_or_none()
+    if not desk_obj:
+        return []
+    user_ids = [str(desk_obj.id_of_admin)]
+
+    stmt = select(desk_members.c.user_id).where(desk_members.c.desk_id == desk_id)
+    result = await db.execute(stmt)
+    members = result.scalars().all()
+    user_ids.extend([str(m) for m in members])
+
+    return list(set(user_ids))
+
+async def handle_broadcast(desk_id: Optional[str], user_id: str, db: AsyncSession):
+    if desk_id:
+        users = await get_desk_users(desk_id, db)
+        for uid in users:
+            state = await get_user_state(uid, db)
+            await manager.broadcast_to_user(uid, state)
+    else:
+        state = await get_user_state(user_id, db)
+        await manager.broadcast_to_user(user_id, state)
 
 
 async def get_user_state(user_id: str, db: AsyncSession) -> dict:
@@ -155,7 +181,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 data = await websocket.receive_text()
                 event = json.loads(data)
                 action = event.get("action")
-                
+                desk_id = None
+
                 if action == "create_task":
                     end_date = datetime.fromisoformat(event["end_date_time"]) if event.get("end_date_time") else None
                     new_task = Task(
@@ -187,6 +214,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         else:
                             new_task.kanban_column_id = None
                     await db.commit()
+                    desk_id = new_task.id_of_desk
 
                 elif action == "update_task":
                     task_id = event.get("id")
@@ -222,12 +250,14 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                             task.kanban_column_id = None
 
                         await db.commit()
+                        desk_id = task.id_of_desk
                     
                 elif action == "delete_task":
                     task_id = event.get("id")
                     res = await db.execute(select(Task).where(Task.id == task_id))
                     task_to_del = res.scalar_one_or_none()
                     if task_to_del:
+                        desk_id = task_to_del.id_of_desk
                         await db.delete(task_to_del)
                         await db.commit()
 
@@ -239,12 +269,19 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     )
                     db.add(new_comment)
                     await db.commit()
+                    task_res = await db.execute(select(Task).where(Task.id == event["id_of_task"]))
+                    task = task_res.scalar_one_or_none()
+                    if task:
+                        desk_id = task.id_of_desk
 
                 elif action == "delete_comment":
                     comment_id = event.get("id")
                     res = await db.execute(select(Comment).where(Comment.id == comment_id))
                     comment_to_del = res.scalar_one_or_none()
                     if comment_to_del:
+                        task_res = await db.execute(select(Task).where(Task.id == comment_to_del.id_of_task))
+                        task = task_res.scalar_one_or_none()
+                        desk_id = task.id_of_desk if task else None
                         await db.delete(comment_to_del)
                         await db.commit()
 
@@ -255,6 +292,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     )
                     db.add(new_desk)
                     await db.commit()
+                    desk_id = None
 
                 elif action == "rename_desk":
                     desk_id = event.get("desk_id")
@@ -314,6 +352,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         users = result.scalars().all()
                         users_data = [{"id": u.id, "nickname": u.nickname} for u in users]
                         await websocket.send_text(json.dumps({"action": "search_users_result", "users": users_data}))
+                    continue
 
                 elif action == "create_kanban_column":
                     desk_id = event.get("desk_id")
@@ -336,6 +375,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         if col:
                             col.title = new_title
                             await db.commit()
+                            desk_id = col.desk_id
 
                 elif action == "delete_kanban_column":
                     col_id = event.get("id")
@@ -343,6 +383,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         res = await db.execute(select(KanbanColumn).where(KanbanColumn.id == col_id))
                         col = res.scalar_one_or_none()
                         if col:
+                            desk_id = col.desk_id
                             for task in col.tasks:
                                 task.kanban_column_id = None
                             await db.delete(col)
@@ -358,12 +399,12 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                             col = res.scalar_one_or_none()
                             if col:
                                 col.order = new_order
+                                desk_id = col.desk_id
                     await db.commit()
 
-                db.expire_all()
-
-                updated_state = await get_user_state(user_id, db)
-                await manager.broadcast_to_user(user_id, updated_state)
+                if action != "search_users":
+                    await handle_broadcast(desk_id, user_id, db)
+                    db.expire_all()
                 
         except WebSocketDisconnect:
             manager.disconnect(user_id, websocket)
