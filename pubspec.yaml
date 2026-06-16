@@ -1,0 +1,29 @@
+name: task_hub
+description: "Task tracker"
+publish_to: 'none' 
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^8.1.0
+
+  window_manager: ^0.5.1
+
+  cupertino_icons: ^1.0.8
+  
+  http: ^1.6.0
+  web_socket_channel: ^3.0.3
+  intl: ^0.20.2
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+
+  uses-material-design: true
