@@ -4,7 +4,7 @@ import '../../theme/theme.dart';
 import '../services/api_service.dart';
 
 class LoginForm extends StatefulWidget {
-  final Function(String uuid) onSuccessAuth;
+  final Function(Map<String, dynamic>) onSuccessAuth;
   final VoidCallback onSwitchToRegister;
 
   const LoginForm({
@@ -91,8 +91,7 @@ class _LoginFormState extends State<LoginForm> {
                           final response = await _apiService.login(email, password);
                           if (response['status'] == 'success') {
                             AuthProvider().authenticate(response['user']);
-                            final String uuid = response['user']['id']?.toString() ?? '';
-                            widget.onSuccessAuth(uuid);
+                            widget.onSuccessAuth(response['user']);
                           }
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(

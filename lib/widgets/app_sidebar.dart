@@ -35,7 +35,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Container(
       width: isMobile ? double.infinity : 220,
@@ -48,67 +48,75 @@ class _AppSidebarState extends State<AppSidebar> {
             SidebarSearchBar(onChanged: (text) {}),
             const SizedBox(height: 24),
             
-            _buildSidebarHeader('Доски', onAddPressed: () {
-              setState(() {
-                _isAddingDesk = true;
-              });
-            }),
-            
-            ...widget.desks.map((desk) => _buildSidebarItem(desk.title, true)),
-            
-            if (_isAddingDesk)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Focus(
-                  onFocusChange: (hasFocus) {
-
-                    if (!hasFocus && _isAddingDesk) {
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSidebarHeader('Доски', onAddPressed: () {
                       setState(() {
-                        _isAddingDesk = false;
-                        _deskController.clear();
+                        _isAddingDesk = true;
                       });
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.screenBackground,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: TextField(
-                      controller: _deskController,
-                      focusNode: _deskFocusNode,
-                      autofocus: true,
-                      style: const TextStyle(fontSize: AppSizes.search, color: AppColors.darkBlue),
-                      decoration: const InputDecoration(
-                        hintText: 'Название доски...',
-                        hintStyle: TextStyle(color: AppColors.darkGray, fontSize: AppSizes.search),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 4),
+                    }),
+                    
+                    ...widget.desks.map((desk) => _buildSidebarItem(desk.title, true)),
+                    
+                    if (_isAddingDesk)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Focus(
+                          onFocusChange: (hasFocus) {
+                            if (!hasFocus && _isAddingDesk) {
+                              setState(() {
+                                _isAddingDesk = false;
+                                _deskController.clear();
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.screenBackground,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: TextField(
+                              controller: _deskController,
+                              focusNode: _deskFocusNode,
+                              autofocus: true,
+                              style: const TextStyle(fontSize: AppSizes.search, color: AppColors.darkBlue),
+                              decoration: const InputDecoration(
+                                hintText: 'Название доски...',
+                                hintStyle: TextStyle(color: AppColors.darkGray, fontSize: AppSizes.search),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 4),
+                              ),
+                              onSubmitted: (val) {
+                                if (val.trim().isNotEmpty) {
+                                  widget.onAddDeskSubmitted(val.trim());
+                                }
+                                setState(() {
+                                  _isAddingDesk = false;
+                                  _deskController.clear();
+                                });
+                              },
+                            ),
+                          ),
+                        ),
                       ),
-                      onSubmitted: (val) {
-                        if (val.trim().isNotEmpty) {
-                          widget.onAddDeskSubmitted(val.trim());
-                        }
-                        setState(() {
-                          _isAddingDesk = false;
-                          _deskController.clear();
-                        });
-                      },
-                    ),
-                  ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    _buildSidebarHeader('Задачи'),
+                    // TODO: плюсик вернуть
+                    _buildSidebarItem('Сегодня', false),
+                    _buildSidebarItem('Завтра', false),
+                    _buildSidebarItem('Неделя', false),
+                    _buildSidebarItem('Всё время', false),
+                  ],
                 ),
               ),
-            
-            const SizedBox(height: 24),
-            
-            _buildSidebarHeader('Задачи'),
-            // TODO: плюсик вернуть
-            _buildSidebarItem('Сегодня', false),
-            _buildSidebarItem('Завтра', false),
-            _buildSidebarItem('Неделя', false),
-            _buildSidebarItem('Всё время', false),
+            ),
           ],
         ),
       ),
@@ -133,7 +141,7 @@ class _AppSidebarState extends State<AppSidebar> {
           ),
       ],
     );
-    }
+  }
 
   Widget _buildSidebarItem(String title, bool isBoard) {
     final isSelected = widget.selectedItem == title;

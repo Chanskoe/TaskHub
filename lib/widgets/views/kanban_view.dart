@@ -261,7 +261,7 @@ class _KanbanViewState extends State<KanbanView> {
 
   Widget _buildAddColumnButton() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       alignment: Alignment.topLeft,
       child: InkWell(
         onTap: _addColumn,

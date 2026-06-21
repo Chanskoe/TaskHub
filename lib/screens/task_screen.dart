@@ -25,6 +25,7 @@ class TaskScreen extends StatefulWidget {
 class _TaskScreenState extends State<TaskScreen> {
   StreamSubscription<Map<String, dynamic>>? _taskStreamSubscription;
   String _selectedSidebarItem = 'Неделя';
+  String? _currentDeskId;
   String? _currentBoardName;
   List<DeskModel> _desks = [];
   String _selectedView = 'Неделя';
@@ -50,6 +51,18 @@ class _TaskScreenState extends State<TaskScreen> {
               .map((d) => DeskModel.fromJson(d as Map<String, dynamic>))
               .toList();
         });
+      }
+      if (_currentDeskId != null) {
+        final found = _desks.firstWhere(
+          (d) => d.id == _currentDeskId,
+          orElse: () => DeskModel(id: '', title: '', idOfAdmin: '', members: []),
+        );
+        if (found.id.isNotEmpty) {
+          _currentBoardName = found.title;
+        } else {
+          _currentDeskId = null;
+          _currentBoardName = null;
+        }
       }
     });
   }
@@ -129,8 +142,21 @@ class _TaskScreenState extends State<TaskScreen> {
 
   Widget _buildBodyContent() {
     if (_selectedSidebarItem == 'Неделя' || (_currentBoardName != null && _selectedView == 'Неделя')) {
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final weekEnd = todayStart.add(const Duration(days: 7));
+
+      final Map<String, List<TaskModel>> filteredWeekTasks = {};
+      
+      _getFilteredTasks().forEach((day, tasks) {
+        filteredWeekTasks[day] = tasks.where((task) {
+          if (task.endDateTime == null) return true;
+          return task.endDateTime!.isBefore(weekEnd);
+        }).toList();
+      });
+
       return WeekView(
-        tasks: _getFilteredTasks(),
+        tasks: filteredWeekTasks,
         addingTaskToDay: _addingTaskToDay,
         onAddTaskPressed: (day) => setState(() => _addingTaskToDay = day),
         onTaskSubmitted: _createTask,
@@ -294,13 +320,24 @@ class _TaskScreenState extends State<TaskScreen> {
     setState(() {
       _selectedSidebarItem = item;
       _currentBoardName = isBoard ? item : null;
-      if (isBoard) _selectedView = 'Неделя';
+      if (isBoard) {
+        final desk = _desks.firstWhere(
+          (d) => d.title == item,
+          orElse: () => DeskModel(id: '', title: '', idOfAdmin: '', members: []),
+        );
+        _currentDeskId = desk.id.isNotEmpty ? desk.id : null;
+        _currentBoardName = item;
+        _selectedView = 'Неделя';
+      } else {
+        _currentDeskId = null;
+        _currentBoardName = null;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     if (isMobile && _selectedTask != null) {
       return Scaffold(

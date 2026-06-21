@@ -43,6 +43,7 @@ class DeskSettingsBar extends StatelessWidget {
       child: PopupMenuButton<String>(
         borderRadius: BorderRadius.circular(20),
         offset: const Offset(0, 45),
+        tooltip: 'Виды представления и настройки',
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: AppColors.cardBackground,
         onSelected: (value) {

@@ -45,6 +45,7 @@ class AppHeader extends StatelessWidget {
               fontSize: AppSizes.search, 
               fontWeight:AppWeight.lightFontWeight, 
               color: AppColors.cardBackground,
+              overflow: TextOverflow.ellipsis
             ),),
               )
             : const SizedBox(width: 48), 

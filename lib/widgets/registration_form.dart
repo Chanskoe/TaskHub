@@ -4,7 +4,7 @@ import '../../theme/theme.dart';
 import '../services/api_service.dart';
 
 class RegistrationForm extends StatefulWidget {
-  final ValueChanged<String> onSuccessAuth;
+  final Function(Map<String, dynamic>) onSuccessAuth;
   final VoidCallback onSwitchToLogin;
 
   const RegistrationForm({
@@ -118,8 +118,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                           
                           if (loginRes['status'] == 'success') {
                             AuthProvider().authenticate(loginRes['user']);
-                            final String realUserId = loginRes['user']['id'].toString();
-                            widget.onSuccessAuth(realUserId);
+                            widget.onSuccessAuth(loginRes['user']);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Регистрация прошла успешно!')),
                             );

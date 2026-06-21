@@ -59,7 +59,8 @@ class _CalendarViewState extends State<CalendarView> {
       days.add(DateTime(_currentMonth.year, _currentMonth.month, i));
     }
     final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-    int remaining = 42 - days.length;
+    int totalCellsNeeded = (startOffset + daysInMonth <= 35) ? 35 : 42;
+    int remaining = totalCellsNeeded - days.length;
     for (int i = 1; i <= remaining; i++) {
       days.add(DateTime(nextMonth.year, nextMonth.month, i));
     }

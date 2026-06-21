@@ -15,7 +15,7 @@ from app.models.user import User
 from app.services.websocket import manager
 from app.models.enums import EDifficulty, EImportance
 from app.models.kanban_column import KanbanColumn
-from app.models.associations import desk_members
+from app.models.associations import desk_members, task_members
 
 router = APIRouter(
     prefix="/ws",
@@ -195,24 +195,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     db.add(new_task)
 
                     if "kanban_column_id" in event:
-                        col_name = event["kanban_column_title"]
-                        if col_name:
-                            desk_id = event.get("id_of_desk")
-                            stmt = select(KanbanColumn).where(
-                                KanbanColumn.desk_id == desk_id,
-                                KanbanColumn.title == col_name
-                            )
-                            res = await db.execute(stmt)
-                            col = res.scalar_one_or_none()
-                            if col:
-                                new_task.kanban_column_id = col.id
-                            else:
-                                new_col = KanbanColumn(title=col_name, desk_id=desk_id, order=0)
-                                db.add(new_col)
-                                await db.flush()
-                                new_task.kanban_column_id = new_col.id
-                        else:
-                            new_task.kanban_column_id = None
+                        new_task.kanban_column_id = event["kanban_column_id"]
                     await db.commit()
                     desk_id = new_task.id_of_desk
 
@@ -334,13 +317,28 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     if desk_id and user_id_to_remove:
                         desk_res = await db.execute(select(Desk).where(Desk.id == desk_id))
                         desk = desk_res.scalar_one_or_none()
-                        if desk and desk.id_of_admin != user_id_to_remove:
+                        if not desk and desk.id_of_admin != user_id:
+                            continue
+                        if desk.id_of_admin == user_id_to_remove:
+                            continue
+                        await db.execute(
+                            desk_members.delete().where(
+                                (desk_members.c.desk_id == desk_id) & (desk_members.c.user_id == user_id_to_remove)
+                            )
+                        )
+                        tasks_res = await db.execute(select(Task).where(Task.id_of_desk == desk_id))
+                        tasks = tasks_res.scalars().all()
+                        for task in tasks:
                             await db.execute(
-                                desk_members.delete().where(
-                                    (desk_members.c.desk_id == desk_id) & (desk_members.c.user_id == user_id_to_remove)
+                                task_members.delete().where(
+                                    (task_members.c.task_id == task.id) & (task_members.c.user_id == user_id_to_remove)
                                 )
                             )
-                            await db.commit()
+                        await db.commit()
+                        await handle_broadcast(desk_id, user_id, db)
+                        removed_state = await get_user_state(user_id_to_remove, db)
+                        await manager.broadcast_to_user(user_id_to_remove, removed_state)
+                        continue
 
                 elif action == "search_users":
                     query = event.get("query", "")
@@ -380,7 +378,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 elif action == "delete_kanban_column":
                     col_id = event.get("id")
                     if col_id:
-                        res = await db.execute(select(KanbanColumn).where(KanbanColumn.id == col_id))
+                        res = await db.execute(select(KanbanColumn).where(KanbanColumn.id == col_id).options(selectinload(KanbanColumn.tasks)))
                         col = res.scalar_one_or_none()
                         if col:
                             desk_id = col.desk_id

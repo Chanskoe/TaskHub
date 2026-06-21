@@ -118,6 +118,20 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
       initialDate: widget.task.endDateTime ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.olive,
+              onPrimary: Colors.white,
+              surface: AppColors.cardBackground,
+              onSurface: AppColors.darkBlue,
+            ), 
+            dialogTheme: DialogThemeData(backgroundColor: AppColors.cardBackground),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
@@ -126,6 +140,20 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
         initialTime: widget.task.endDateTime != null 
             ? TimeOfDay.fromDateTime(widget.task.endDateTime!) 
             : const TimeOfDay(hour: 23, minute: 59),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppColors.olive,
+                onPrimary: Colors.white,
+                surface: AppColors.cardBackground,
+                onSurface: AppColors.darkBlue,
+              ), 
+              dialogTheme: DialogThemeData(backgroundColor: AppColors.cardBackground),
+            ),
+            child: child!,
+          );
+        },
       );
 
       DateTime finalDateTime;
@@ -143,21 +171,36 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Время выполнения (мин)', style: TextStyle(fontSize: 16)),
+        backgroundColor: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Время выполнения (мин)', 
+          style: TextStyle(fontSize: AppSizes.subHeader, color: AppColors.darkBlue, fontWeight: AppWeight.normalFontWeight)
+        ),
         content: TextField(
           controller: runtimeCtrl,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(hintText: 'Например: 15'),
+          style: const TextStyle(color: AppColors.darkBlue, fontSize: AppSizes.body),
+          cursorColor: AppColors.olive,
+          decoration: const InputDecoration(
+            hintText: 'Например: 15',
+            hintStyle: TextStyle(color: AppColors.darkGray, fontSize: AppSizes.body, fontWeight: AppWeight.lightFontWeight),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.olive)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.darkBlue)),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: const Text('Отмена', style: TextStyle(color: AppColors.darkGray, fontSize: AppSizes.body))
+          ),
           TextButton(
             onPressed: () {
               final val = int.tryParse(runtimeCtrl.text);
               _sendUpdate("runtime", val);
               Navigator.pop(context);
             },
-            child: const Text('Сохранить'),
+            child: const Text('Сохранить', style: TextStyle(color: AppColors.darkBlue, fontWeight: AppWeight.normalFontWeight, fontSize: AppSizes.body)),
           ),
         ],
       ),
@@ -197,7 +240,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // верхняя панель
             Padding(
               padding: const EdgeInsets.only(left: 20, right: 12, top: 12),
               child: Row(
@@ -236,7 +278,6 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
                   children: [
                     const Padding(padding: EdgeInsets.only(top: 15)),
                     
-                    // название задачи
                     TextField(
                       controller: _titleController,
                       focusNode: _titleFocusNode,
@@ -437,6 +478,7 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String?>(
         value: items.containsKey(value) ? value : null,
+        dropdownColor: AppColors.cardBackground,
         hint: Text('Выбрать...', style: _valueStyle(isPlaceholder: true)),
         isDense: true,
         isExpanded: true,
@@ -475,6 +517,7 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String?>(
         value: widget.task.importance?.name.toLowerCase(),
+        dropdownColor: AppColors.cardBackground,
         hint: Text('Выбрать...', style: _valueStyle(isPlaceholder: true)),
         isDense: true,
         isExpanded: true,
@@ -485,7 +528,7 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
             value: val,
             child: Row(
               children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: getImportanceColor(val), shape: BoxShape.circle)),
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: getImportanceColor(val), shape: BoxShape.circle)),
                 const SizedBox(width: 8),
                 Expanded(  
                   child: Text(
@@ -521,6 +564,7 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String?>(
         value: widget.task.difficulty?.name.toLowerCase(),
+        dropdownColor: AppColors.cardBackground,
         hint: Text('Выбрать...', style: _valueStyle(isPlaceholder: true)),
         isDense: true,
         isExpanded: true,
@@ -624,46 +668,62 @@ class _TaskEditSidebarState extends State<TaskEditSidebar> {
     Set<String> tempSelected = Set.from(initialSelectedIds);
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Выберите исполнителей"),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: members.length,
-            itemBuilder: (context, index) {
-              final member = members[index];
-              final id = member["id"]!;
-              final nickname = member["nickname"]!;
-              return CheckboxListTile(
-                title: Text(nickname),
-                value: tempSelected.contains(id),
-                onChanged: (checked) {
-                  setState(() {
-                    if (checked == true) {
-                      tempSelected.add(id);
-                    } else {
-                      tempSelected.remove(id);
-                    }
-                  });
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              "Выберите исполнителей", 
+              style: TextStyle(fontSize: AppSizes.subHeader, color: AppColors.darkBlue, fontWeight: AppWeight.normalFontWeight)
+            ),
+            content: SizedBox(
+              width: 400,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: members.length,
+                itemBuilder: (context, index) {
+                  final member = members[index];
+                  final id = member["id"]!;
+                  final nickname = member["nickname"]!;
+                  final isChecked = tempSelected.contains(id);
+                  
+                  return CheckboxListTile(
+                    title: Text(nickname, style: const TextStyle(color: AppColors.darkBlue, fontSize: AppSizes.body, fontWeight: AppWeight.lightFontWeight)),
+                    value: isChecked,
+                    activeColor: AppColors.olive,
+                    checkColor: AppColors.screenBackground,
+                    controlAffinity: ListTileControlAffinity.trailing,
+                    checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    onChanged: (checked) {
+                      setStateDialog(() {
+                        if (checked == true) {
+                          tempSelected.add(id);
+                        } else {
+                          tempSelected.remove(id);
+                        }
+                      });
+                    },
+                  );
                 },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Отмена"),
-          ),
-          TextButton(
-            onPressed: () {
-              _sendUpdate("id_of_members", tempSelected.toList());
-              Navigator.pop(context);
-            },
-            child: const Text("Сохранить"),
-          ),
-        ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text("Отмена", style: TextStyle(color: AppColors.darkGray, fontSize: AppSizes.body)),
+              ),
+              TextButton(
+                onPressed: () {
+                  _sendUpdate("id_of_members", tempSelected.toList());
+                  Navigator.pop(dialogContext);
+                  setState(() {});
+                },
+                child: const Text("Сохранить", style: TextStyle(color: AppColors.darkBlue, fontWeight: AppWeight.normalFontWeight, fontSize: AppSizes.body)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

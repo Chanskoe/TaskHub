@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:task_hub/services/auth_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'theme/theme.dart';
@@ -12,6 +13,7 @@ void main() async {
     await windowManager.ensureInitialized();
     await windowManager.setMinimumSize(const Size(1000, 600));
   }
+  await AuthProvider().init();
   runApp(const MyApp());
 }
 

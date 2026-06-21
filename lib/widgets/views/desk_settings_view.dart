@@ -119,8 +119,7 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setStateDialog) {
-          if (subscription == null) {
-            subscription = WebSocketService().taskStream.listen((data) {
+          subscription ??= WebSocketService().taskStream.listen((data) {
               if (data['action'] == 'search_users_result') {
                 setStateDialog(() {
                   searchResults = List<Map<String, dynamic>>.from(data['users']);
@@ -128,9 +127,9 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
                 });
               }
             });
-          }
           return AlertDialog(
-            title: const Text('Добавить участника'),
+            backgroundColor: AppColors.cardBackground,
+            title: const Text('Добавить участника', textAlign: TextAlign.center, style: TextStyle(fontSize: AppSizes.subHeader, fontWeight: AppWeight.normalFontWeight)),
             content: SizedBox(
               width: 400,
               height: 500,
@@ -151,7 +150,7 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
                     const Center(child: CircularProgressIndicator())
                   else if (searchResults.isEmpty)
                     const Padding(
-                      padding: EdgeInsets.all(16.0),
+                      padding: EdgeInsets.all(16),
                       child: Text('Пользователи не найдены'),
                     )
                   else
@@ -161,13 +160,34 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
                         itemCount: searchResults.length,
                         itemBuilder: (context, index) {
                           final user = searchResults[index];
-                          return ListTile(
-                            title: Text(user['nickname']),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.add_circle_outline, color: AppColors.green),
-                              onPressed: () => _addMember(user['id'], user['nickname']),
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _addMember(user['id'], user['nickname']),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.person, color: AppColors.darkGray),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Text(
+                                        user['nickname'],
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: AppColors.darkBlue,
+                                          fontSize: AppSizes.body,
+                                        ),
+                                      ),
+                                    ),
+                                    const Icon(Icons.add, color: AppColors.darkBlue, size: 18,),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
+                          
                         },
                       ),
                     ),
@@ -180,7 +200,7 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
                   subscription?.cancel();
                   if (mounted) Navigator.of(dialogContext).pop();
                 },
-                child: const Text('Закрыть'),
+                child: const Text('Закрыть', style: TextStyle(fontSize: AppSizes.body, color: AppColors.darkBlue, fontWeight: AppWeight.normalFontWeight)),
               ),
             ],
           );
@@ -200,7 +220,7 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
     });
 
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -208,32 +228,54 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
             children: [
               Expanded(
                 child: TextField(
+                  cursorWidth: 1,                 
+                  cursorHeight: 14,
+                  textAlignVertical: TextAlignVertical.center,
                   controller: _deskTitleController,
+                  style: const TextStyle(
+                    fontSize: AppSizes.subHeader,
+                    color: AppColors.darkBlue,
+                    overflow: TextOverflow.ellipsis
+                  ),
                   decoration: const InputDecoration(
-                    labelText: 'Название доски',
-                    border: OutlineInputBorder(),
+                    hintText: 'Введите название доски...',
+                    hintStyle: TextStyle(
+                    color: AppColors.darkGray, 
+                    fontSize: AppSizes.search, 
+                    fontWeight: AppWeight.extraLightFontWeight,
+                  ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 4),
                   ),
                   onSubmitted: _renameDesk,
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.red),
-                onPressed: _deleteDesk,
-                tooltip: 'Удалить доску',
-              ),
+              if (widget.currentUserId == widget.desk.idOfAdmin) 
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: AppColors.darkBlue),
+                  onPressed: _deleteDesk,
+                  padding: EdgeInsets.zero,
+                  tooltip: 'Удалить доску',
+                ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 15),
+          Container(
+            height: 1,
+            color: AppColors.olive,
+          ),
+          const SizedBox(height: 15),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Исполнители',
-                style: TextStyle(fontSize: AppSizes.subHeader, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: AppSizes.subHeader, fontWeight: AppWeight.normalFontWeight, color: AppColors.darkBlue),
               ),
-              const Spacer(),
               IconButton(
-                icon: const Icon(Icons.add, size: 20),
+                icon: const Icon(Icons.add, size: 20, color: AppColors.darkBlue),
                 onPressed: _showAddMemberDialog,
                 tooltip: 'Добавить участника',
                 padding: EdgeInsets.zero,
@@ -251,16 +293,16 @@ class _DeskSettingsViewState extends State<DeskSettingsView> {
                 return ListTile(
                   leading: Icon(
                     isAdmin ? Icons.star : Icons.person,
-                    color: isAdmin ? AppColors.yellow : AppColors.darkGray,
+                    color:AppColors.darkGray,
                   ),
-                  title: Text(member['nickname']),
-                  trailing: isAdmin
-                      ? null
-                      : IconButton(
+                  title: Text(member['nickname'], overflow: TextOverflow.ellipsis,),
+                  trailing: (widget.currentUserId == widget.desk.idOfAdmin && member['id'] != widget.desk.idOfAdmin)
+                      ? IconButton(
                           icon: const Icon(Icons.delete_outline, size: 20),
                           onPressed: () => _removeMember(member['id']),
                           tooltip: 'Удалить из доски',
-                        ),
+                        )
+                      : null,
                 );
               },
             ),

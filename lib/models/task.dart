@@ -40,12 +40,18 @@ class TaskModel {
   String getHourMinute() {
     final endHour = endDateTime?.hour ?? 23;
     final endMinute = endDateTime?.minute ?? 59;
-    return endHour == 23 && endMinute == 59 ? "" : "$endHour:$endMinute";
+    final hourStr = endHour.toString().padLeft(2, '0');
+    final minuteStr = endMinute.toString().padLeft(2, '0');
+    return hourStr == "23" && minuteStr == "59" ? "" : "$hourStr:$minuteStr";
   }
 
   String getOverdueDaysText() {
     if (endDateTime == null) return "";
-    final durationDiff = DateTime.now().difference(endDateTime!);
+    DateTime dayNow = DateTime.now();
+    //final durationDiff = DateTime.now().difference(endDateTime!);
+    DateTime startDate = DateTime(endDateTime!.year, endDateTime!.month, endDateTime!.day);
+    DateTime endDate = DateTime(dayNow.year, dayNow.month, dayNow.day);
+    final durationDiff = endDate.difference(startDate);
     int days = durationDiff.inDays;
     if (days == 0 && !durationDiff.isNegative) days = 1;
     if (days <= 0) return "";
