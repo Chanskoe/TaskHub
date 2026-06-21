@@ -216,6 +216,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                             
                         if "id_of_desk" in event:
                             task.id_of_desk = event["id_of_desk"]
+                            task.kanban_column_id = None
                             
                         if "end_date_time" in event:
                             task.end_date_time = datetime.fromisoformat(event["end_date_time"]) if event["end_date_time"] else None

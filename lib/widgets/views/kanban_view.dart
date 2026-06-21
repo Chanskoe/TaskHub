@@ -41,6 +41,7 @@ class KanbanView extends StatefulWidget {
 
 class _KanbanViewState extends State<KanbanView> {
   late List<KanbanColumnData> _columns;
+  int? _inlineInputColumnIndex;
 
   @override
   void initState() {
@@ -124,19 +125,25 @@ class _KanbanViewState extends State<KanbanView> {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Добавить задачу'),
+        backgroundColor: AppColors.cardBackground,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Добавить задачу', style: TextStyle(
+            fontSize: AppSizes.body,
+            color: AppColors.darkBlue,
+            fontWeight: AppWeight.lightFontWeight,
+          ),),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('Новая задача'),
+              leading: const Icon(Icons.add, color: AppColors.darkBlue, size: 20),
+              title: const Text('Новая задача', style: TextStyle(color: AppColors.darkBlue, fontSize: AppSizes.search)),
               onTap: () => Navigator.pop(context, {'type': 'new'}),
             ),
-            const Divider(),
             ListTile(
-              leading: const Icon(Icons.list_alt),
-              title: const Text('Существующая задача'),
+              leading: const Icon(Icons.list_alt, color: AppColors.darkBlue, size: 20),
+              title: const Text('Существующая задача', style: TextStyle(color: AppColors.darkBlue, fontSize: AppSizes.search)),
               onTap: () => Navigator.pop(context, {'type': 'existing'}),
             ),
           ],
@@ -146,50 +153,62 @@ class _KanbanViewState extends State<KanbanView> {
     if (result == null) return;
 
     if (result['type'] == 'new') {
-      final titleCtrl = TextEditingController();
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Название задачи'),
-          content: TextField(controller: titleCtrl, autofocus: true),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
-            TextButton(
-              onPressed: () {
-                final taskTitle = titleCtrl.text.trim();
-                if (taskTitle.isNotEmpty) Navigator.pop(context, taskTitle);
-              },
-              child: const Text('Создать'),
-            ),
-          ],
-        ),
-      ).then((taskTitle) {
-        if (taskTitle is String && taskTitle.isNotEmpty) {
-          _createNewTask(columnId, taskTitle, columnTitle);
-        }
+      setState(() {
+        _inlineInputColumnIndex = columnIndex;
       });
     } else if (result['type'] == 'existing') {
-      final tasksWithoutColumn = widget.allDeskTasks.where((t) => t.kanbanColumnId == null).toList();
+      final availableTasks = widget.allDeskTasks.where((t) => t.kanbanColumnId != columnId).toList();
       
-      if (tasksWithoutColumn.isEmpty) {
+      if (availableTasks.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Нет доступных задач без колонки')),
+          SnackBar(
+            backgroundColor: AppColors.darkBlue,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            content: const Text(
+              'Задач для добавления нет',
+              style: TextStyle(color: AppColors.cardBackground),
+            ),
+          ),
         );
         return;
       }
+
       final selectedTask = await showDialog<TaskModel>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Выберите задачу'),
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Выберите задачу',
+            style: TextStyle(
+              fontSize: AppSizes.body,
+              color: AppColors.darkBlue,
+              fontWeight: AppWeight.lightFontWeight,
+            ),
+          ),
           content: SizedBox(
-            width: double.maxFinite,
+            width: 250,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: tasksWithoutColumn.length,
-              itemBuilder: (context, idx) => ListTile(
-                title: Text(tasksWithoutColumn[idx].title),
-                onTap: () => Navigator.pop(context, tasksWithoutColumn[idx]),
-              ),
+              itemCount: availableTasks.length,
+              itemBuilder: (context, idx) {
+                final currentTask = availableTasks[idx];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    title: Text(
+                      currentTask.title,
+                      style: const TextStyle(color: AppColors.darkBlue, fontSize: AppSizes.search),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.darkBlue),
+                    onTap: () => Navigator.pop(context, currentTask),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -228,32 +247,111 @@ class _KanbanViewState extends State<KanbanView> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return ReorderableListView.builder(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       itemCount: _columns.length + 1,
+      proxyDecorator: (Widget child, int index, Animation<double> animation) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (BuildContext context, Widget? child) {
+            return Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(20),
+              color: AppColors.cardBackground,
+              shadowColor: AppColors.olive,
+              child: child,
+            );
+          },
+          child: child,
+        );
+      },
+
+      // ignore: deprecated_member_use
+      onReorder: (oldIndex, newIndex) {
+        if (oldIndex == _columns.length) return;
+        
+        if (newIndex > _columns.length) {
+          newIndex = _columns.length;
+        }
+
+        setState(() {
+          if (oldIndex < newIndex) {
+            newIndex -= 1;
+          }
+          final item = _columns.removeAt(oldIndex);
+          _columns.insert(newIndex, item);
+
+          if (_inlineInputColumnIndex == oldIndex) {
+            _inlineInputColumnIndex = newIndex;
+          } else if (_inlineInputColumnIndex != null) {
+            if (oldIndex < _inlineInputColumnIndex! && newIndex >= _inlineInputColumnIndex!) {
+              _inlineInputColumnIndex = _inlineInputColumnIndex! - 1;
+            } else if (oldIndex > _inlineInputColumnIndex! && newIndex <= _inlineInputColumnIndex!) {
+              _inlineInputColumnIndex = _inlineInputColumnIndex! + 1;
+            }
+          }
+        });
+
+        final List<Map<String, dynamic>> reorderedPayload = [];
+        for (int i = 0; i < _columns.length; i++) {
+          if (_columns[i].id != null) {
+            reorderedPayload.add({
+              'id': _columns[i].id,
+              'order': i,
+            });
+          }
+        }
+
+        WebSocketService().sendAction('reorder_kanban_columns', {
+          'columns': reorderedPayload,
+        });
+        
+        widget.onTaskUpdated();
+      },
+
       itemBuilder: (context, index) {
         if (index == _columns.length) {
-          return _buildAddColumnButton();
+          return Container(
+            key: const ValueKey('add_column_button_key'),
+            child: _buildAddColumnButton(),
+          );
         }
         final column = _columns[index];
-        return TaskColumn(
-          dayTitle: column.title,
-          tasks: column.tasks,
-          isEditable: true,
-          titleController: column.controller,
-          autoFocusTitle: column.title.isEmpty,
-          onAddTaskPressed: () => _showAddTaskDialog(index),
-          onDeleteColumn: () => _removeColumn(index),
-          onTaskTap: widget.onTaskTap,
-          onTaskToggle: (task) {
-            WebSocketService().sendAction('update_task', {
-              'id': task.id,
-              'isCompleted': !task.isCompleted,
-            });
-            widget.onTaskUpdated();
-          },
-          onTitleChanged: (newTitle) => _renameColumn(index, newTitle),
+        return Container(
+          key: ValueKey(column.id ?? 'column_$index'),
+          child: TaskColumn(
+            dayTitle: column.title,
+            tasks: column.tasks,
+            isEditable: true,
+            titleController: column.controller,
+            autoFocusTitle: column.title.isEmpty,
+            onAddTaskPressed: () => _showAddTaskDialog(index),
+            onDeleteColumn: () => _removeColumn(index),
+            onTaskTap: widget.onTaskTap,
+            onTaskToggle: (task) {
+              WebSocketService().sendAction('update_task', {
+                'id': task.id,
+                'isCompleted': !task.isCompleted,
+              });
+              widget.onTaskUpdated();
+            },
+            onTitleChanged: (newTitle) => _renameColumn(index, newTitle),
+            showInlineInput: _inlineInputColumnIndex == index,
+            onInlineTaskSubmitted: (taskTitle) {
+              if (column.id != null) {
+                _createNewTask(column.id!, taskTitle, column.title);
+              }
+              setState(() {
+                _inlineInputColumnIndex = null;
+              });
+            },
+            onInlineTaskCancelled: () {
+              setState(() {
+                _inlineInputColumnIndex = null;
+              });
+            },
+          ),
         );
       },
     );
